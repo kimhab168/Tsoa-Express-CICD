@@ -5,6 +5,7 @@ on:
     branches: [main] # Specify branches as needed
   push:
     branches: [main] # Specify branches as needed
+
 jobs:
   build:
     runs-on: ubuntu-latest # Specifies that the job should run on the latest Ubuntu virtual environment provided by GitHub
@@ -15,8 +16,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4 # This step checks out your repository under $GITHUB_WORKSPACE, so your workflow can access it
-        with:
-          fetch-depth: 0 # Ensures all branches and tags are fetched, useful for versioning or other git-related operations
 
       - name: Set up Node.js
         uses: actions/setup-node@v4 # This step sets up a Node.js environment with a specified version
@@ -44,7 +43,7 @@ jobs:
         uses: actions/download-artifact@v4 # Downloads artifacts from the build job
         with:
           name: build # The name of the artifact to download
-          path: ./build/artifacts # The path to store the downloaded artifact
+          path: ./build # The path to store the downloaded artifact
 
       - name: Prepare Deployment Directories
         uses: appleboy/ssh-action@master # SSH into the server to prepare directories
@@ -64,7 +63,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          source: "./build/artifacts/*"
+          source: "./build/*"
           target: "/home/ubuntu/apps/build"
           strip_components: 1 # Adjust based on the directory depth of the source
 
@@ -76,9 +75,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            echo "NODE_ENV=production" > /path/to/deployment/directory/build/.env
-            echo "PORT=${{secrets.PORT}}" >> /path/to/deployment/directory/build/.env
-            echo "DATABASE_URL=${{secrets.MONGODB_URL}}" >> /path/to/deployment/directory/build/.env
+            echo "NODE_ENV=production" > /home/ubuntu/apps/build/configs/.env.production
+            echo "PORT=${{ secrets.PORT }}" >> /home/ubuntu/apps/build/configs/.env.production
+            echo "MONGODB_URL=${{ secrets.MONGODB_URL}}" >> /home/ubuntu/apps/build/configs/.env.production
 
       - name: Install Dependencies and Restart Application
         uses: appleboy/ssh-action@master # Installs dependencies and restarts the application using a process manager
@@ -88,12 +87,16 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            cd /path/to/deployment/directory/build
+            # Load the full user environment for non-interactive shells
+            source /home/ubuntu/.nvm/nvm.sh
+            source /home/ubuntu/.profile
+
+            cd /home/ubuntu/apps/build
             yarn install --production
             # Assume PM2 is used, Replace with other command for other process manager
             # Assume you have script for run start in production and restart in production
             # Check if the PM2 process is running
-            if pm2 show your-service-name > /dev/null; then
+            if pm2 show product-service > /dev/null; then
               echo "Application is running. Restarting..."
               yarn restart
             else
