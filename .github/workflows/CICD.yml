@@ -40,6 +40,29 @@ jobs:
     if: github.ref == 'refs/heads/main' # This job runs only if the push or PR merge is to the 'main' branch
 
     steps:
+      # Copy the .sh script to the server
+      - name: Copy `environment.sh` script to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }} # Server IP address stored in GitHub Secrets
+          username: ${{ secrets.SERVER_USERNAME }} # Server username stored in GitHub Secrets
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # SSH private key stored in GitHub Secrets
+          port: 22 # Default SSH port
+          source: "./scripts/setup-environment.sh" # Path to your local .sh script in the repository
+          target: "/home/ubuntu/setup-environment.sh" # Target path on the server where the script will be copied
+
+      # Run the copied .sh script on the server
+      - name: Run `setup-environment.sh` on Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            chmod +x /home/ubuntu/setup-environment.sh # Make the script executable
+            /home/ubuntu/setup-environment.sh # Execute the script
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4 # Downloads artifacts from the build job
         with:
@@ -78,7 +101,7 @@ jobs:
           script: |
             echo "NODE_ENV=production" > /home/ubuntu/apps/build/configs/.env.production
             echo "PORT=${{ secrets.PORT }}" >> /home/ubuntu/apps/build/configs/.env.production
-            echo "MONGODB_URL=${{ secrets.MONGODB_URL}}" >> /home/ubuntu/apps/build/configs/.env.production
+            echo "MONGODB_URL=${{ secrets.MONGODB_URL }}" >> /home/ubuntu/apps/build/configs/.env.production
 
       - name: Install Dependencies and Restart Application
         uses: appleboy/ssh-action@master # Installs dependencies and restarts the application using a process manager
@@ -95,7 +118,6 @@ jobs:
             cd /home/ubuntu/apps/build
             yarn install --production
             # Assume PM2 is used, Replace with other command for other process manager
-            # Assume you have a script for run start in production and restart in production
             # Check if the PM2 process is running
             if pm2 show product-service > /dev/null; then
               echo "Application is running. Restarting..."
@@ -103,4 +125,3 @@ jobs:
             else
               echo "Application is not running. Starting..."
               yarn start
-            fi
