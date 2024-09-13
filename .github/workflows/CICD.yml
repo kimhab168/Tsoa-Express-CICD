@@ -40,6 +40,10 @@ jobs:
     if: github.ref == 'refs/heads/main' # This job runs only if the push or PR merge is to the 'main' branch
 
     steps:
+      - name: Create Dir scripts
+        run: mkdir scripts
+      - name: List files in the directory
+        run: ls -la ./scripts # Adjust the path to the directory where your .sh file is located
       # Copy the .sh script to the server
       - name: Copy `environment.sh` script to Server
         uses: appleboy/scp-action@master
