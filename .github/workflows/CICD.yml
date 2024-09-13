@@ -68,27 +68,6 @@ jobs:
           target: "/home/ubuntu/apps/build"
           strip_components: 1 # Adjust based on the directory depth of the source
 
-      - name: Upload `environment.sh` script to Server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          source: "./scripts/setup-environment.sh" # Ensure the path is correct
-          target: "/home/ubuntu/environment.sh"
-
-      - name: Run `setup-environment.sh` script on Server
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            chmod +x /home/ubuntu/setup-environment.sh
-            /home/ubuntu/setup-environment.sh
-
       - name: Create .env File
         uses: appleboy/ssh-action@master # Creates an environment variable file on the server
         with:
