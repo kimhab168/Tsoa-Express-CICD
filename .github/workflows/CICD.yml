@@ -40,33 +40,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: make dir
-        run: mkdir scripts
-      - name: List files in the repository
-        run: ls # Verifies the existence of the .sh file in the scripts directory
-      # Copy the setup-environment.sh script to the server
-      - name: Copy `setup-environment.sh` script to Server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          source: "./scripts/setup-environment.sh" # Ensure this path is correct
-          target: "/home/ubuntu/setup-environment.sh"
-
-      # Run the copied setup-environment.sh script on the server
-      - name: Run `setup-environment.sh` on Server
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            chmod +x /home/ubuntu/setup-environment.sh
-            /home/ubuntu/setup-environment.sh
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
