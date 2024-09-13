@@ -33,6 +33,7 @@ jobs:
         with:
           name: build # Optionally change the name of the artifact
           path: ./build # Adjust this to where your build outputs artifacts, e.g., './build'
+
   deploy:
     runs-on: ubuntu-latest # Specifies that the job should run on the latest Ubuntu virtual environment provided by GitHub
     needs: build # Specifies that this job needs the 'build' job to complete successfully before it starts
@@ -53,7 +54,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }} # SSH private key from secrets
           port: 22 # SSH port, usually 22
           script: |
-            mkdir -p /home/ubuntu/apps/build  # Change to match your desire directory structure
+            mkdir -p /home/ubuntu/apps/build  # Change to match your desired directory structure
             mkdir -p /home/ubuntu/apps/build/configs  # For additional configuration files
 
       - name: Copy files to Server
@@ -66,6 +67,27 @@ jobs:
           source: "./build/*"
           target: "/home/ubuntu/apps/build"
           strip_components: 1 # Adjust based on the directory depth of the source
+
+      - name: Upload `setup-environment.sh` script to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "./path-to-your-setup-environment.sh" # Replace with the actual path to your script
+          target: "/home/ubuntu/setup-environment.sh"
+
+      - name: Run `setup-environment.sh` script on Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            chmod +x /home/ubuntu/setup-environment.sh
+            /home/ubuntu/setup-environment.sh
 
       - name: Create .env File
         uses: appleboy/ssh-action@master # Creates an environment variable file on the server
@@ -94,7 +116,7 @@ jobs:
             cd /home/ubuntu/apps/build
             yarn install --production
             # Assume PM2 is used, Replace with other command for other process manager
-            # Assume you have script for run start in production and restart in production
+            # Assume you have a script for run start in production and restart in production
             # Check if the PM2 process is running
             if pm2 show product-service > /dev/null; then
               echo "Application is running. Restarting..."
