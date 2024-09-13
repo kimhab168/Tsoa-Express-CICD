@@ -2,16 +2,16 @@ name: CI/CD Pipeline for Service
 
 on:
   pull_request:
-    branches: [main] # Specify branches as needed
+    branches: [main]
   push:
-    branches: [main] # Specify branches as needed
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: "." # Adjust this to the root directory of your Node.js project
+        working-directory: "."
 
     steps:
       - name: Checkout code
@@ -80,19 +80,7 @@ jobs:
             echo "PORT=${{ secrets.PORT }}" >> /home/ubuntu/apps/build/configs/.env.production
             echo "MONGODB_URL=${{ secrets.MONGODB_URL }}" >> /home/ubuntu/apps/build/configs/.env.production
 
-      - name: Copy Setup-Environment files to Server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          source: "./scripts/setup-environment.sh"
-          target: "./"
-          strip_components: 1
-      - name: Run setup Environment
-        run: sh setup-environment.sh
-      - name: Install Dependencies and Restart Application
+      - name: Install Yarn and PM2, and Deploy Application
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -100,14 +88,42 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            source /home/ubuntu/.nvm/nvm.sh
-            source /home/ubuntu/.profile
+            # Load environment variables for Node.js and nvm
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # Load nvm
+
+            # Ensure Node.js and npm are installed
+            if ! command -v node &> /dev/null; then
+              echo "Node.js is not installed. Installing Node.js..."
+              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
+              export NVM_DIR="$HOME/.nvm"
+              [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+              nvm install node
+            fi
+
+            # Ensure Yarn is installed
+            if ! command -v yarn &> /dev/null; then
+              echo "Yarn is not installed. Installing Yarn..."
+              npm install -g yarn
+            fi
+
+            # Ensure PM2 is installed and in PATH
+            if ! command -v pm2 &> /dev/null; then
+              echo "PM2 is not installed. Installing PM2..."
+              yarn global add pm2
+            fi
+
+            # Ensure PM2 is available in PATH
+            export PATH="$HOME/.yarn/bin:$PATH"
 
             cd /home/ubuntu/apps/build
             yarn install --production
+
+            # Check if the PM2 process is running, if so restart, otherwise start
             if pm2 show product-service > /dev/null; then
               echo "Application is running. Restarting..."
-              yarn restart
+              pm2 restart product-service
             else
               echo "Application is not running. Starting..."
-              yarn start
+              pm2 start yarn --name "product-service" -- start
+            fi
