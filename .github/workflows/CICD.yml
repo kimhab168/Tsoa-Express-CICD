@@ -75,7 +75,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          source: "./path-to-your-setup-environment.sh" # Replace with the actual path to your script
+          source: "./scripts/setup-environment.sh" # Replace with the actual path to your script
           target: "/home/ubuntu/setup-environment.sh"
 
       - name: Run `setup-environment.sh` script on Server
