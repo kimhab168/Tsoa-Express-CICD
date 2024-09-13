@@ -88,14 +88,32 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            source /home/ubuntu/.nvm/nvm.sh
-            source /home/ubuntu/.profile
+            # Ensure NVM is loaded and use Node.js 20
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
+            nvm use 20
+
+            # Navigate to the build directory and install dependencies
             cd /home/ubuntu/apps/build
             yarn install --production
+
+            # Check if the application is running, then restart or start
             if pm2 show product-service > /dev/null; then
               echo "Application is running. Restarting..."
               yarn restart
             else
               echo "Application is not running. Starting..."
               yarn start
+
+      # Optional: Set up the environment by running setup-environment.sh
+      - name: Set up Environment (Optional)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            bash /path/to/setup-environment.sh
