@@ -68,15 +68,15 @@ jobs:
           target: "/home/ubuntu/apps/build"
           strip_components: 1 # Adjust based on the directory depth of the source
 
-      - name: Upload `setup-environment.sh` script to Server
+      - name: Upload `environment.sh` script to Server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          source: "./scripts/setup-environment.sh" # Replace with the actual path to your script
-          target: "/home/ubuntu/setup-environment.sh"
+          source: "./scripts/setup-environment.sh" # Ensure the path is correct
+          target: "/home/ubuntu/environment.sh"
 
       - name: Run `setup-environment.sh` script on Server
         uses: appleboy/ssh-action@master
