@@ -164,7 +164,10 @@
 		"license": {
 			"name": "MIT"
 		},
-		"contact": {}
+		"contact": {
+			"name": "MyDragon168 ",
+			"email": "cambodiagames3@gmail.com"
+		}
 	},
 	"paths": {
 		"/v1/products": {
